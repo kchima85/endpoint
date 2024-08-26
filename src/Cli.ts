@@ -52,4 +52,18 @@ export class Cli {
         }
         this.checkForMultilineMode(`CREATE ${directoryPath}`, { fromCli });
     }
+
+    list() {
+        let forestOutput = "";
+        const treeNames = Object.keys(this.forest.trees);
+        treeNames.sort((a, b) => a.localeCompare(b));
+        treeNames.forEach((treeName) => {
+            const tree = this.forest.trees[treeName];
+            forestOutput += this.buildTreeOutput(tree);
+        });
+        this.checkForMultilineMode(`LIST\n${forestOutput}`.trimEnd(), {
+            fromCli: true,
+        });
+        return `LIST\n${forestOutput}`.trimEnd();
+    }
 }
