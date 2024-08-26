@@ -32,4 +32,18 @@ describe("Cli", () => {
             expect(errorMessage).toBe("Invalid path: baz does not exist");
         });
     });
+
+    describe("list", () => {
+        it("should list all directories with correct indentation", () => {
+            const cli = new Cli();
+            cli.create("foo");
+            cli.create("foo/bar");
+            cli.create("foo/bar/baz");
+            cli.create("foo/baz");
+            cli.create("baz");
+            const output = cli.list();
+            const structure = `LIST\nbaz\nfoo\n  bar\n    baz\n  baz`;
+            expect(output).toBe(structure);
+        });
+    });
 });
