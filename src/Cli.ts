@@ -66,4 +66,55 @@ export class Cli {
         });
         return `LIST\n${forestOutput}`.trimEnd();
     }
+
+    move(
+        originPath: string,
+        destinationPath: string,
+        { fromCli = false } = {}
+    ) {
+        const { splitPath: splitOriginPath, error: originError } =
+            this.parsePath(originPath);
+        if (originError) return originError;
+
+        const { splitPath: splitDestinationPath, error: destinationError } =
+            this.parsePath(destinationPath);
+        if (destinationError) return destinationError;
+
+        const directoryToBeMoved = splitOriginPath[splitOriginPath.length - 1];
+        let currentOriginRootDirectory = this.getNodeByPath(splitOriginPath);
+
+        let currentDestinationRootDirectory = this.getParentNode(
+            splitDestinationPath,
+            this.forest
+        );
+
+        if (!currentOriginRootDirectory || !currentDestinationRootDirectory) {
+            return this.logAndReturnError(
+                `Invalid path: ${originPath} or ${destinationPath} does not exist`,
+                { fromCli }
+            );
+        }
+
+        if (currentDestinationRootDirectory.children[directoryToBeMoved]) {
+            return this.logAndReturnError(
+                `Invalid destination path: ${directoryToBeMoved} already exists in ${destinationPath}`,
+                { fromCli }
+            );
+        }
+
+        if (currentOriginRootDirectory.name === directoryToBeMoved) {
+            currentDestinationRootDirectory.addChild(
+                currentOriginRootDirectory
+            );
+        } else {
+            currentDestinationRootDirectory.addChild(
+                currentOriginRootDirectory.children[directoryToBeMoved]
+            );
+        }
+
+        this.delete(originPath);
+        this.checkForMultilineMode(`MOVE ${originPath} ${destinationPath}`, {
+            fromCli,
+        });
+    }
 }
