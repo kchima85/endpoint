@@ -117,4 +117,35 @@ export class Cli {
             fromCli,
         });
     }
+
+    delete(path: string, { fromCli = false } = {}) {
+        const directoryToBeDeleted = path.split("/").pop()!;
+        const { splitPath, error } = this.parsePath(path);
+
+        if (error) return error;
+        let parentDirectory = this.getNodeByPath(splitPath);
+        if (!parentDirectory) {
+            return this.logAndReturnError(
+                `DELETE ${path}\nCannot delete ${path} - ${splitPath[0]} does not exist`.trimStart(),
+                { fromCli }
+            );
+        }
+
+        if (parentDirectory.children[directoryToBeDeleted]) {
+            delete parentDirectory.children[directoryToBeDeleted];
+            this.checkForMultilineMode(`DELETE ${path}`, { fromCli });
+        } else if (this.forest.trees[directoryToBeDeleted]) {
+            delete this.forest.trees[directoryToBeDeleted];
+            this.checkForMultilineMode(`DELETE ${directoryToBeDeleted}`, {
+                fromCli,
+            });
+        } else {
+            return this.logAndReturnError(
+                `${directoryToBeDeleted} not found in path`,
+                {
+                    fromCli,
+                }
+            );
+        }
+    }
 }
