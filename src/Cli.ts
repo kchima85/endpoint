@@ -148,4 +148,98 @@ export class Cli {
             );
         }
     }
+
+    help() {
+        console.log(`
+            Available commands:
+            create <path>        - Create a directory at the specified path.
+            list                 - List all directories and subdirectories.
+            move <src> <dest>    - Move a directory from src to dest.
+            delete <path> <dir>  - Delete a directory at the specified path.
+            help                 - Display this help message.
+        `);
+    }
+
+    private parsePath(path: string) {
+        const splitPath = path.split("/");
+        const treeName = splitPath[0];
+        if (!treeName) {
+            const error = "Invalid path: root folder name is missing";
+            this.checkForMultilineMode(error);
+            return { treeName, splitPath, error };
+        }
+        return { treeName, splitPath };
+    }
+
+    private getNodeByPath(splitPath: string[]) {
+        const treeName = splitPath[0];
+        let currentNode = this.forest.trees[treeName]?.root;
+
+        if (!currentNode) return undefined;
+
+        for (let i = 1; i < splitPath.length - 1; i++) {
+            if (!currentNode.children[splitPath[i]]) {
+                return undefined;
+            }
+            currentNode = currentNode.children[splitPath[i]];
+        }
+
+        return currentNode;
+    }
+
+    private getParentNode(destinationPath: string[], forest: Forest) {
+        if (destinationPath.length < 2)
+            return forest.trees[destinationPath[0]]?.root;
+
+        // Start at the root of the tree
+        const treeName = destinationPath[0];
+        let currentNode = forest.trees[treeName]?.root;
+
+        // Traverse the path up to the parent node
+        for (let i = 1; i < destinationPath.length; i++) {
+            if (!currentNode) return undefined; // If at any point the node is undefined, the path is invalid
+            currentNode = currentNode.children[destinationPath[i]];
+        }
+        return currentNode; // Return the parent node
+    }
+
+    private buildTreeOutput(tree: Tree) {
+        const stack: { node: Node; depth: number }[] = [];
+        let treeOutput = "";
+        stack.push({ node: tree.root, depth: 0 });
+
+        while (stack.length > 0) {
+            const { node, depth } = stack.pop()!;
+            treeOutput += `${" ".repeat(depth)}${node.name}\n`;
+            let childNames = Object.keys(node.children);
+            childNames = childNames.sort((a, b) => b.localeCompare(a));
+            for (const childName of childNames) {
+                stack.push({
+                    node: node.children[childName],
+                    depth: depth + 2,
+                });
+            }
+        }
+        return treeOutput;
+    }
+
+    private logAndReturnError(message: string, { fromCli = false } = {}) {
+        this.checkForMultilineMode(message, { fromCli });
+        return message;
+    }
+
+    private checkForMultilineMode(message: string, { fromCli = false } = {}) {
+        if (this.multilineMode && fromCli) {
+            this.logQueue.push(message);
+        } else if (this.multilineMode && !fromCli) {
+            console.log(message);
+        } else if (!this.multilineMode && fromCli) {
+            console.log(message);
+        }
+    }
+
+    private flushLogQueue() {
+        this.logQueue.forEach((message) => console.log(message));
+        this.logQueue = [];
+    }
 }
