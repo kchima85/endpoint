@@ -129,4 +129,39 @@ describe("Cli", () => {
             );
         });
     });
+
+    describe("delete", () => {
+        it("should delete a leaf directory", () => {
+            const cli = new Cli();
+            cli.create("foo");
+            cli.create("foo/bar");
+            cli.create("foo/bar/baz");
+            cli.delete("foo/bar/baz");
+
+            const forest = cli.getForest();
+            expect(
+                forest.trees["foo"].root.children["bar"].children["baz"]
+            ).toBeUndefined();
+        });
+
+        it("should delete a directory with children", () => {
+            const cli = new Cli();
+            cli.create("foo");
+            cli.create("foo/bar");
+            cli.create("foo/bar/baz");
+            cli.delete("foo/bar");
+
+            const forest = cli.getForest();
+            expect(forest.trees["foo"].root.children["bar"]).toBeUndefined();
+        });
+
+        it("should not delete a directory if it does not exist", () => {
+            const cli = new Cli();
+            cli.create("foo");
+            cli.create("foo/bar");
+            const expectedError = cli.delete("foo/baz");
+
+            expect(expectedError).toBe("baz not found in path");
+        });
+    });
 });
